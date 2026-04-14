@@ -223,9 +223,12 @@ export const inventorySlice = createSlice({
         state.searchState.searchingSlots.push({ slot, inventoryId });
       }
     },
-    finishItemSearch: (state, action: PayloadAction<number>) => {
-      state.searchState.searchingSlots = state.searchState.searchingSlots.filter((s) => s !== action.payload);
-      const item = state.rightInventory.items.find((i) => i != null && i.slot === action.payload);
+    finishItemSearch: (state, action: PayloadAction<{ slot: number; inventoryId: string }>) => {
+      const { slot, inventoryId } = action.payload;
+      state.searchState.searchingSlots = state.searchState.searchingSlots.filter(
+        (s) => !(s.slot === slot && s.inventoryId === inventoryId)
+      );
+      const item = state.rightInventory.items.find((i) => i.slot === slot);
       if (item) item.searched = true;
     },
   },
