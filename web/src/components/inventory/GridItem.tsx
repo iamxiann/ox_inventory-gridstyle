@@ -24,14 +24,16 @@ interface GridItemProps {
   inventoryType: Inventory['type'];
   inventoryId: string;
   inventoryGroups: Inventory['groups'];
+  inventorySearchable?: boolean;
 }
 
-const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, inventoryGroups }) => {
+const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, inventoryGroups, inventorySearchable = false }) => {
   const dispatch = useAppDispatch();
   const timerRef = useRef<number | null>(null);
   const isHovered = useRef(false);
-  const isSearching = useAppSelector((state) => state.inventory.searchState.searchingSlots.includes(item.slot));
-  const isUnsearched = item.searched === false && !isSearching;
+  const searchState = useAppSelector(selectSearchState);
+  const isSearching = searchState.searchingSlots.some((s) => s.slot === item.slot && s.inventoryId === inventoryId);
+  const isUnsearched = inventorySearchable && item.searched !== true && !isSearching;
   const [wasRevealed, setWasRevealed] = React.useState(false);
   const hotbarIndex = useAppSelector((state) =>
     inventoryType === 'player' ? state.inventory.hotbar.indexOf(item.slot) : -1
@@ -70,10 +72,10 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
       duration = result.duration;
     }
 
-    dispatch(beginItemSearch(item.slot));
+    dispatch(beginItemSearch({ slot: item.slot, inventoryId }));
 
     setTimeout(() => {
-      dispatch(finishItemSearch(item.slot));
+      dispatch(finishItemSearch({ slot: item.slot, inventoryId }));
       if (!isEnvBrowser()) {
         fetchNui('itemSearchComplete', { slot: item.slot, inventoryId: inventoryId });
       }
