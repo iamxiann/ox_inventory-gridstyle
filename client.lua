@@ -83,8 +83,8 @@ local defaultInventory = {
 	weight = 0,
 	maxWeight = shared.dropweight,
 	items = {},
-	gridWidth = shared.gridwidth or 10,
-	gridHeight = shared.gridheight or 7,
+	gridWidth = 10,
+	gridHeight = 7,
 }
 
 local searchableTypes = shared.searchable and {
@@ -114,10 +114,9 @@ local function closeTrunk()
 		---@todo animation for vans?
 		Utils.PlayAnimAdvanced(0, 'anim@heists@fleeca_bank@scope_out@return_case', 'trevor_action', coords.x, coords.y, coords.z, 0.0, 0.0, GetEntityHeading(playerPed), 2.0, 2.0, 1000, 49, 0.25)
 
-		local entity = currentInventory.entity
-		local door = currentInventory.door
-
 		CreateThread(function()
+			local entity = currentInventory.entity
+			local door = currentInventory.door
 			Wait(900)
 
 			if type(door) == 'table' then
@@ -182,6 +181,7 @@ function client.openInventory(inv, data)
     end
 
     local left, right, accessError
+    local craftingInventoryPayload = nil
 
     if inv == 'player' and data ~= cache.serverId then
         local targetId, targetPed, serverId
@@ -216,7 +216,8 @@ function client.openInventory(inv, data)
             return lib.notify({ id = 'cannot_perform', type = 'error', description = locale('cannot_perform') })
         end
 
-        left, right, accessError = lib.callback.await('ox_inventory:openCraftingBench', 200, data.id, data.index)
+        local craftinginvData
+        left, craftinginvData, accessError = lib.callback.await('ox_inventory:openCraftingBench', 200, data.id, data.index)
 
         if left then
             right = CraftingBenches[data.id]
@@ -243,6 +244,8 @@ function client.openInventory(inv, data)
                 coords = coords,
                 distance = distance
             }
+
+            craftingInventoryPayload = craftinginvData
         end
     elseif invOpen ~= nil then
         if inv == 'policeevidence' then
@@ -346,7 +349,8 @@ function client.openInventory(inv, data)
         action = 'setupInventory',
         data = {
             leftInventory = left,
-            rightInventory = currentInventory
+            rightInventory = currentInventory,
+            craftingInventory = craftingInventoryPayload
         }
     })
 
@@ -1039,7 +1043,7 @@ function client.closeInventory(server)
 		closeTrunk()
 		SendNUIMessage({ action = 'closeInventory' })
 		SetInterval(client.interval, 200)
-		Wait(0)
+		Wait(200)
 
 		if invOpen ~= nil then return end
 
@@ -1383,7 +1387,6 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 			type = v.type or nil,
 			compatibleWeapons = v.compatibleWeapons or nil,
 			sizeModifier = v.sizeModifier or nil,
-			rarity = v.rarity or nil,
 		}
 	end
 
@@ -1418,7 +1421,7 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 	local locales = lib.getLocales()
 
 	for k, v in pairs(locales) do
-		if k:find('^ui_') or k:find('^rarity_') then
+		if k:find('^ui_')then
 			uiLocales[k] = v
 		end
 	end
@@ -2249,4 +2252,3 @@ lib.callback.register('ox_inventory:getVehicleData', function(netid)
 		return GetEntityModel(entity), GetVehicleClass(entity)
 	end
 end)
-
