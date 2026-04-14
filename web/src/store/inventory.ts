@@ -217,9 +217,10 @@ export const inventorySlice = createSlice({
         weapon.metadata.components.push(componentName);
       }
     },
-    beginItemSearch: (state, action: PayloadAction<number>) => {
-      if (!state.searchState.searchingSlots.includes(action.payload)) {
-        state.searchState.searchingSlots.push(action.payload);
+    beginItemSearch: (state, action: PayloadAction<{ slot: number; inventoryId: string }>) => {
+      const { slot, inventoryId } = action.payload;
+      if (!state.searchState.searchingSlots.some((s) => s.slot === slot && s.inventoryId === inventoryId)) {
+        state.searchState.searchingSlots.push({ slot, inventoryId });
       }
     },
     finishItemSearch: (state, action: PayloadAction<number>) => {
